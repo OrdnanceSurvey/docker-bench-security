@@ -5,7 +5,7 @@ info "3 - Docker Daemon Configuration Files"
 
 # 3.1
 check_3_1="3.1  - Verify that docker.service file ownership is set to root:root"
-file="/usr/lib/systemd/system/docker.service"
+file="$(get_systemd_service_file docker-registry.service)"
 if [ -f "$file" ]; then
   if [ "$(stat -c %u%g $file)" -eq 00 ]; then
     pass "$check_3_1"
@@ -20,7 +20,7 @@ fi
 
 # 3.2
 check_3_2="3.2  - Verify that docker.service file permissions are set to 644"
-file="/usr/lib/systemd/system/docker.service"
+file="$(get_systemd_service_file docker-registry.service)"
 if [ -f "$file" ]; then
   if [ "$(stat -c %a $file)" -eq 644 ]; then
     pass "$check_3_2"
@@ -35,7 +35,7 @@ fi
 
 # 3.3
 check_3_3="3.3  - Verify that docker-registry.service file ownership is set to root:root"
-file="/usr/lib/systemd/system/docker-registry.service"
+file="$(get_systemd_service_file docker-registry.service)"
 if [ -f "$file" ]; then
   if [ "$(stat -c %u%g $file)" -eq 00 ]; then
     pass "$check_3_3"
@@ -50,7 +50,7 @@ fi
 
 # 3.4
 check_3_4="3.4  - Verify that docker-registry.service file permissions are set to 644"
-file="/usr/lib/systemd/system/docker-registry.service"
+file="$(get_systemd_service_file docker-registry.service)"
 if [ -f "$file" ]; then
   if [ "$(stat -c %a $file)" -eq 644 ]; then
     pass "$check_3_4"
@@ -292,7 +292,7 @@ fi
 
 # 3.19
 check_3_19="3.19 - Verify that TLS CA certificate file ownership is set to root:root"
-tlscacert=$(get_command_line_args docker | sed -n 's/.*tlscacert=\([^s]\)/\1/p' | sed 's/--/ --/g' | cut -d " " -f 1)
+tlscacert=$(get_docker_effective_command_line_args '--tlscacert' | sed -n 's/.*tlscacert=\([^s]\)/\1/p' | sed 's/--/ --/g' | cut -d " " -f 1)
 if [ -f "$tlscacert" ]; then
   if [ "$(stat -c %u%g "$tlscacert")" -eq 00 ]; then
     pass "$check_3_19"
@@ -307,7 +307,7 @@ fi
 
 # 3.20
 check_3_20="3.20 - Verify that TLS CA certificate file permissions are set to 444"
-tlscacert=$(get_command_line_args docker | sed -n 's/.*tlscacert=\([^s]\)/\1/p' | sed 's/--/ --/g' | cut -d " " -f 1)
+tlscacert=$(get_docker_effective_command_line_args '--tlscacert' | sed -n 's/.*tlscacert=\([^s]\)/\1/p' | sed 's/--/ --/g' | cut -d " " -f 1)
 if [ -f "$tlscacert" ]; then
   perms=$(ls -ld "$tlscacert" | awk '{print $1}')
   if [ "$perms" = "-r--r--r--" ]; then
@@ -323,7 +323,7 @@ fi
 
 # 3.21
 check_3_21="3.21 - Verify that Docker server certificate file ownership is set to root:root"
-tlscert=$(get_command_line_args docker | sed -n 's/.*tlscert=\([^s]\)/\1/p' | sed 's/--/ --/g' | cut -d " " -f 1)
+tlscert=$(get_docker_effective_command_line_args '--tlscert' | sed -n 's/.*tlscert=\([^s]\)/\1/p' | sed 's/--/ --/g' | cut -d " " -f 1)
 if [ -f "$tlscert" ]; then
   if [ "$(stat -c %u%g "$tlscert")" -eq 00 ]; then
     pass "$check_3_21"
@@ -338,7 +338,7 @@ fi
 
 # 3.22
 check_3_22="3.22 - Verify that Docker server certificate file permissions are set to 444"
-tlscert=$(get_command_line_args docker | sed -n 's/.*tlscert=\([^s]\)/\1/p' | sed 's/--/ --/g' | cut -d " " -f 1)
+tlscert=$(get_docker_effective_command_line_args '--tlscert' | sed -n 's/.*tlscert=\([^s]\)/\1/p' | sed 's/--/ --/g' | cut -d " " -f 1)
 if [ -f "$tlscert" ]; then
   perms=$(ls -ld "$tlscert" | awk '{print $1}')
   if [ "$perms" = "-r--r--r--" ]; then
@@ -354,7 +354,7 @@ fi
 
 # 3.23
 check_3_23="3.23 - Verify that Docker server key file ownership is set to root:root"
-tlskey=$(get_command_line_args docker | sed -n 's/.*tlskey=\([^s]\)/\1/p' | sed 's/--/ --/g' | cut -d " " -f 1)
+tlskey=$(get_docker_effective_command_line_args '--tlskey' | sed -n 's/.*tlskey=\([^s]\)/\1/p' | sed 's/--/ --/g' | cut -d " " -f 1)
 if [ -f "$tlskey" ]; then
   if [ "$(stat -c %u%g "$tlskey")" -eq 00 ]; then
     pass "$check_3_23"
@@ -369,7 +369,7 @@ fi
 
 # 3.24
 check_3_24="3.24 - Verify that Docker server key file permissions are set to 400"
-tlskey=$(get_command_line_args docker | sed -n 's/.*tlskey=\([^s]\)/\1/p' | sed 's/--/ --/g' | cut -d " " -f 1)
+tlskey=$(get_docker_effective_command_line_args '--tlskey' | sed -n 's/.*tlskey=\([^s]\)/\1/p' | sed 's/--/ --/g' | cut -d " " -f 1)
 if [ -f "$tlskey" ]; then
   perms=$(ls -ld "$tlskey" | awk '{print $1}')
   if [ "$perms" = "-r--------" ]; then
@@ -386,8 +386,8 @@ fi
 # 3.25
 check_3_25="3.25 - Verify that Docker socket file ownership is set to root:docker"
 file="/var/run/docker.sock"
-if [ -f "$file" ]; then
-  if [ "$(stat -c %u%g $file)" -eq 00 ]; then
+if [ -S "$file" ]; then
+  if [ "$(stat -c %U:%G $file)" = 'root:docker' ]; then
     pass "$check_3_25"
   else
     warn "$check_3_25"
@@ -401,7 +401,7 @@ fi
 # 3.26
 check_3_26="3.26 - Verify that Docker socket file permissions are set to 660"
 file="/var/run/docker.sock"
-if [ -f "$file" ]; then
+if [ -S "$file" ]; then
   perms=$(ls -ld "$file" | awk '{print $1}')
   if [ "$perms" = "srw-rw----" ]; then
     pass "$check_3_26"
